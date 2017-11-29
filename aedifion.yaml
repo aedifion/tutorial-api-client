@@ -1,0 +1,310 @@
+---
+swagger: "2.0"
+info:
+  description: "Welcome to aedifion's http API! This graphical interface will give\
+          \ you a hands-on experience of the API.\n\nIn order to protect your privacy and\
+          \ security on the web, all of our API endpoints require a TLS encrypted connection.\
+          \ The aedifion server's certificate is using the GeoTrust Inc. CA, therefore the\
+          \ certificate is included in most programming and web environments by default.\n\n
+          \ All resources are access controlled using personal user accounts including individual\
+          \ access privileges. We implemented token-based authentication, so you do not have to\
+          \ bother to enter your username and password multiple times during a session or even saving\
+          \ this sensitive data within your programming environment. You can request a token at our\
+          \ API Endpoint \"/v1/getToken\" via basic http authentication.\n\n
+          \ We have prepared an example for you how to use our API in Python and cURL. The examples\
+          \ will provide you with an API client and a tutorial how to use it. In addition we gathered\
+          \ information how to generate API clients for other programming languages at\
+          \ https://github.com/aedifion/tutorial-api-client\n\n
+          \ Note: Currently the aedifion API does not support time zones. On data acquisition the time\
+          \ series will be time stamped with local time. Any information on the time zone will be ignored.\
+          \ On data export the time series will have the same time stamp as on data acquisition and the time\
+          \ zone information will be set to UTC+0. E.g. an observation made in Berlin (UTC+1) at 13:00:00\
+          \ will have the time stamp 13:00:00 UTC+0 on data export. Please keep this in mind if you're\
+          \ application is time zone sensitve.\n\n
+          \ This API will grow along with the services of aedifion. For any further information, please contact support@aedifion.com\n"
+  version: "1.0.0"
+  title: "aedifion API"
+  contact:
+    email: "support@aedifion.com"
+#host: "api.aedifion.io"
+tags:
+- name: "Timeseries"
+  description: "Endpoints for import and export of timeseries data."
+- name: "Access Control"
+  description: "Endpoints for login verification and access control administration."
+- name: "User Data"
+  description: "Endpoints concerning user specific data including authorized resources\
+    \ of a user."
+schemes:
+- "https"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /v1/getTimeseriesByID:
+    get:
+      tags:
+      - "Timeseries"
+      summary: "Query observations for datapoint Ids within time interval."
+      operationId: "get_timeseries_by_id"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "project"
+        in: "query"
+        description: "Name of the project where data will be queried from."
+        required: true
+        type: "string"
+      - name: "timestamp_start"
+        in: "query"
+        description: "Timestamp starting the time interval for the requested data.\
+          \ Please use one of these date formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\"\
+          \ incase blanks cannot be used."
+        required: true
+        type: "string"
+      - name: "timestamp_end"
+        in: "query"
+        description: "Timestamp ending the time interval for the requested data. Please\
+          \ use one of these date formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\"\
+          \ incase blanks cannot be used."
+        required: true
+        type: "string"
+      - name: "datapointID"
+        in: "query"
+        description: "This is the unique identifier for the queried datapoint formated\
+          \ \"name=anyUniqueName\"."
+        required: true
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "multi"
+      responses:
+        200:
+          description: "200 OK"
+          schema:
+            type: "array"
+            title: "results"
+            items:
+              $ref: "#/definitions/byTag"
+        401:
+          description: "Authentication information is missing or invalid"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "swagger_server.controllers.timeseries_controller"
+  /v1/getProjects:
+    get:
+      tags:
+      - "User Data"
+      summary: "Query authorized projects for a user."
+      operationId: "get_projects"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "200 OK"
+          schema:
+            type: "array"
+            title: "results"
+            items:
+              $ref: "#/definitions/byBuilding"
+        401:
+          description: "Authentication information is missing or invalid"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "swagger_server.controllers.user_data_controller"
+  /v1/getDatapointIDs:
+    get:
+      tags:
+      - "User Data"
+      summary: "Query authorized datapoint IDs for a user within a project."
+      operationId: "get_datapoint_ids"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "project"
+        in: "query"
+        description: "Name of the project where data will be queried from."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 OK"
+          schema:
+            type: "array"
+            title: "results"
+            items:
+              $ref: "#/definitions/tags"
+        401:
+          description: "Authentication information is missing or invalid"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "swagger_server.controllers.user_data_controller"
+  /v1/getToken:
+    get:
+      tags:
+      - "Access Control"
+      summary: "Query session access token."
+      operationId: "get_token"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Will send `Authenticated` if authentication is succesful,\
+            \ otherwise it will send `Unauthorized`"
+          schema:
+            type: "string"
+        401:
+          description: "Authentication information is missing or invalid"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "swagger_server.controllers.access_control_controller"
+  /v1/getLastBefore:
+    get:
+      tags:
+      - "Timeseries"
+      summary: "Query last observation made before a certain point in time."
+      operationId: "get_last_before"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "project"
+        in: "query"
+        description: "Name of the project where data will be queried from."
+        required: true
+        type: "string"
+      - name: "timestamp"
+        in: "query"
+        description: "Timestamp for the requested data. Please use one of these date\
+          \ formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\" incase blanks\
+          \ cannot be used."
+        required: true
+        type: "string"
+      - name: "datapointID"
+        in: "query"
+        description: "This is the unique identifier for the queried datapoint formated\
+          \ \"name=anyUniqueName\"."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 OK"
+          schema:
+            type: "array"
+            title: "results"
+            items:
+              $ref: "#/definitions/next-last"
+        401:
+          description: "Authentication information is missing or invalid"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "swagger_server.controllers.timeseries_controller"
+  /v1/getFirstAfter:
+    get:
+      tags:
+      - "Timeseries"
+      summary: "Query first observation made after a certain point in time."
+      operationId: "get_first_after"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "project"
+        in: "query"
+        description: "Name of the project where data will be queried from."
+        required: true
+        type: "string"
+      - name: "timestamp"
+        in: "query"
+        description: "Timestamp for the requested data. Please use one of these date\
+          \ formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\" incase blanks\
+          \ cannot be used."
+        required: true
+        type: "string"
+      - name: "datapointID"
+        in: "query"
+        description: "This is the unique identifier for the queried datapoint formated\
+          \ \"name=anyUniqueName\"."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 OK"
+          schema:
+            type: "array"
+            title: "results"
+            items:
+              $ref: "#/definitions/next-last"
+        401:
+          description: "Authentication information is missing or invalid"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "swagger_server.controllers.timeseries_controller"
+securityDefinitions:
+  basicAuth:
+    type: "basic"
+definitions:
+  byTag:
+    properties:
+      tagstring:
+        type: "string"
+      schema:
+        type: "array"
+        title: "timevalue"
+        items:
+          $ref: "#/definitions/ResultsTimestamp"
+  ResultsTimestamp:
+    properties:
+      time:
+        type: "string"
+      value:
+        type: "number"
+        format: "float"
+  byBuilding:
+    properties:
+      building:
+        type: "string"
+  tags:
+    properties:
+      key:
+        type: "string"
+      value:
+        type: "string"
+  next-last:
+    properties:
+      time:
+        type: "string"
+      value:
+        type: "number"
+        format: "float"
