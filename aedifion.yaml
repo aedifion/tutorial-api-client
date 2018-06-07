@@ -1,40 +1,48 @@
 ---
 swagger: "2.0"
 info:
-  description: "Welcome to aedifion's http API! This graphical interface will give\
-          \ you a hands-on experience of the API.\n\nIn order to protect your privacy and\
-          \ security on the web, all of our API endpoints require a TLS encrypted connection.\
-          \ The aedifion server's certificate is using the GeoTrust Inc. CA, therefore the\
-          \ certificate is included in most programming and web environments by default.\n\n
-          \ All resources are access controlled using personal user accounts including individual\
-          \ access privileges. We implemented token-based authentication, so you do not have to\
-          \ bother to enter your username and password multiple times during a session or even saving\
-          \ this sensitive data within your programming environment. You can request a token at our\
-          \ API Endpoint \"/v1/getToken\" via basic http authentication.\n\n
-          \ We have prepared an example for you how to use our API in Python and cURL. The examples\
-          \ will provide you with an API client and a tutorial how to use it. In addition we gathered\
-          \ information how to generate API clients for other programming languages at\
-          \ https://github.com/aedifion/tutorial-api-client\n\n
-          \ Note: Currently the aedifion API does not support time zones. On data acquisition the time\
-          \ series will be time stamped with local time. Any information on the time zone will be ignored.\
-          \ On data export the time series will have the same time stamp as on data acquisition and the time\
-          \ zone information will be set to UTC+0. E.g. an observation made in Berlin (UTC+1) at 13:00:00\
-          \ will have the time stamp 13:00:00 UTC+0 on data export. Please keep this in mind if you're\
-          \ application is time zone sensitve.\n\n
-          \ This API will grow along with the services of aedifion. For any further information, please contact support@aedifion.com\n"
-  version: "1.0.0"
-  title: "aedifion API"
+  description: "Welcome to the aedifion HTTP API!\nThis user interface allows you\
+    \ to explore and test our API endpoints.\n\nIn order to protect your data, API\
+    \ endpoints are accessible only via HTTPS and require user authentication. Permissions\
+    \ to access critical endpoints, e.g. for creating new users, are under further\
+    \ role based access control.\n\nWe implemented token-based authentication for\
+    \ your convenience. You can request a token at our API Endpoint \"/v2/getToken\"\
+    \ (section \"User\") via HTTP basic auth. For more information on tokens please\
+    \ read the endpoint's description.\n\nFurthermore we prepared different examples\
+    \ on how to use our API, e.g. from MatLab, Python or cURL at https://github.com/aedifion/tutorial-api-client.\
+    \ The examples will provide you with API clients and tutorials how to use them.\
+    \ In addition we gathered information on how to generate API clients for other\
+    \ programming languages.\n\nAlso the aedifion Excel plug-in makes use of the API.\
+    \ It enables you to one-click import, resample and plot timeseries data within\
+    \ your Microsoft Excel environment. Download it for free on https://github.com/aedifion/aedifion-excel-plugin.\n\
+    \n*Note:* Currently the aedifion API exports time series data in the time zone\
+    \ that it was collected, meaning that on data export the time series will have\
+    \ the same time stamp as on data acquisition and the time zone information will\
+    \ be set to Zulu / UTC+0 irrespective of the actual time-zone. E.g. an observation\
+    \ made in Berlin (UTC+1) at 13:00:00 will have the time stamp 13:00:00Z on data\
+    \ export. Please keep this in mind if you're application is time zone sensitive.\
+    \ We will add proper support of time zones, soon.\n\nThis API has three sections:\n\
+    \ - \"User\" comprises endpoints for managing users and their personal preferences\
+    \ such as favorites.\n - \"Project\" comprises endpoints for managing projects\
+    \ and project-related resources such as data point keys.\n - \"Datapoint\" comprises\
+    \ endpoints for managing single data points and querying their time-series data.\n\
+    \n\nThis API will grow along with the services of aedifion.\n\nFor any further\
+    \ information or feedback, please contact us or sign up to one of our webinares\
+    \ at support@aedifion.com"
+  version: "2.0"
+  title: "aedifion API v2.0"
   contact:
     email: "support@aedifion.com"
-#host: "api.aedifion.io"
+host: "api.aedifion.io"
 tags:
-- name: "Timeseries"
-  description: "Endpoints for import and export of timeseries data."
-- name: "Access Control"
-  description: "Endpoints for login verification and access control administration."
-- name: "User Data"
-  description: "Endpoints concerning user specific data including authorized resources\
-    \ of a user."
+- name: "User"
+  description: "Creating, modifying, and accessing users and related resources."
+- name: "Project"
+  description: "Creating, modifying, and accessing projects and related resources."
+- name: "Datapoint"
+  description: "Creating, modifying, and accessing datapoints and related resources."
+- name: "Alerts"
+  description: "Creating, modifying, and accessing alerts and related resources."
 schemes:
 - "https"
 consumes:
@@ -42,269 +50,2540 @@ consumes:
 produces:
 - "application/json"
 paths:
-  /v1/getTimeseriesByID:
+  /v2/token:
     get:
       tags:
-      - "Timeseries"
-      summary: "Query observations for datapoint Ids within time interval."
-      operationId: "get_timeseries_by_id"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "project"
-        in: "query"
-        description: "Name of the project where data will be queried from."
-        required: true
-        type: "string"
-      - name: "timestamp_start"
-        in: "query"
-        description: "Timestamp starting the time interval for the requested data.\
-          \ Please use one of these date formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\"\
-          \ incase blanks cannot be used."
-        required: true
-        type: "string"
-      - name: "timestamp_end"
-        in: "query"
-        description: "Timestamp ending the time interval for the requested data. Please\
-          \ use one of these date formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\"\
-          \ incase blanks cannot be used."
-        required: true
-        type: "string"
-      - name: "datapointID"
-        in: "query"
-        description: "This is the unique identifier for the queried datapoint formated\
-          \ \"name=anyUniqueName\"."
-        required: true
-        type: "array"
-        items:
-          type: "string"
-        collectionFormat: "multi"
-      responses:
-        200:
-          description: "200 OK"
-          schema:
-            type: "array"
-            title: "results"
-            items:
-              $ref: "#/definitions/byTag"
-        401:
-          description: "Authentication information is missing or invalid"
-          headers:
-            WWW_Authenticate:
-              type: "string"
-      security:
-      - basicAuth: []
-      x-swagger-router-controller: "swagger_server.controllers.timeseries_controller"
-  /v1/getProjects:
-    get:
-      tags:
-      - "User Data"
-      summary: "Query authorized projects for a user."
-      operationId: "get_projects"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "200 OK"
-          schema:
-            type: "array"
-            title: "results"
-            items:
-              $ref: "#/definitions/byBuilding"
-        401:
-          description: "Authentication information is missing or invalid"
-          headers:
-            WWW_Authenticate:
-              type: "string"
-      security:
-      - basicAuth: []
-      x-swagger-router-controller: "swagger_server.controllers.user_data_controller"
-  /v1/getDatapointIDs:
-    get:
-      tags:
-      - "User Data"
-      summary: "Query authorized datapoint IDs for a user within a project."
-      operationId: "get_datapoint_ids"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "project"
-        in: "query"
-        description: "Name of the project where data will be queried from."
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "200 OK"
-          schema:
-            type: "array"
-            title: "results"
-            items:
-              $ref: "#/definitions/tags"
-        401:
-          description: "Authentication information is missing or invalid"
-          headers:
-            WWW_Authenticate:
-              type: "string"
-      security:
-      - basicAuth: []
-      x-swagger-router-controller: "swagger_server.controllers.user_data_controller"
-  /v1/getToken:
-    get:
-      tags:
-      - "Access Control"
-      summary: "Query session access token."
+      - "User"
+      summary: "Get authentication token."
+      description: "Returns an authentication token which contains the encrypted user\
+        \ name and password. The token can be used instead of HTTP basic auth by using\
+        \ the token as user name and leaving the password field empty."
       operationId: "get_token"
       consumes:
       - "application/json"
       produces:
       - "application/json"
+      parameters:
+      - name: "validity"
+        in: "query"
+        description: "The validity for the requested token in hours."
+        required: false
+        type: "number"
+        default: 24
+        maximum: 8760
+        minimum: 1
+        format: "float"
+      - name: "scope"
+        in: "query"
+        description: "The scope of the requested token."
+        required: false
+        type: "string"
+        default: "full"
+        enum:
+        - "read"
+        - "write"
+        - "full"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/AuthToken"
+        401:
+          description: "Unauthorized"
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user:
+    get:
+      tags:
+      - "User"
+      summary: "Get logged in user's details."
+      description: "Returns the details of the logged in user."
+      operationId: "get_user"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
       parameters: []
       responses:
         200:
-          description: "Will send `Authenticated` if authentication is succesful,\
-            \ otherwise it will send `Unauthorized`"
+          description: "Success"
           schema:
-            type: "string"
+            $ref: "#/definitions/UserWithContext"
         401:
-          description: "Authentication information is missing or invalid"
+          description: "Unauthorized"
+          schema:
+            $ref: "#/definitions/Error"
           headers:
             WWW_Authenticate:
               type: "string"
       security:
       - basicAuth: []
-      x-swagger-router-controller: "swagger_server.controllers.access_control_controller"
-  /v1/getLastBefore:
-    get:
+      x-swagger-router-controller: "app.controllers.user_controller"
+    post:
       tags:
-      - "Timeseries"
-      summary: "Query last observation made before a certain point in time."
-      operationId: "get_last_before"
+      - "User"
+      summary: "Create a new user."
+      description: "Creates a new user with the specified details."
+      operationId: "post_user"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
-      - name: "project"
-        in: "query"
-        description: "Name of the project where data will be queried from."
+      - in: "body"
+        name: "user"
+        description: "The details of the user to create\\n\n- **firstName** is mandatory,\
+          \ the first name of the new user\n- **lastName**  is mandatory, the last\
+          \ name of the new user\n- **email** is mandatory, must be unique among all\
+          \ users\n- **password** is mandatory, the initial password for the new user\n\
+          - **comapny_id** is mandatory, the referenced company must exist\"\n"
         required: true
-        type: "string"
-      - name: "timestamp"
-        in: "query"
-        description: "Timestamp for the requested data. Please use one of these date\
-          \ formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\" incase blanks\
-          \ cannot be used."
-        required: true
-        type: "string"
-      - name: "datapointID"
-        in: "query"
-        description: "This is the unique identifier for the queried datapoint formated\
-          \ \"name=anyUniqueName\"."
-        required: true
-        type: "string"
+        schema:
+          $ref: "#/definitions/NewUser"
       responses:
         200:
-          description: "200 OK"
+          description: "Successful operation. The newly created user is returned in\
+            \ the 'resource' field and the 'operation' will indicate a CREATE operation."
           schema:
-            type: "array"
-            title: "results"
-            items:
-              $ref: "#/definitions/next-last"
+            $ref: "#/definitions/Success"
         401:
-          description: "Authentication information is missing or invalid"
+          description: "Unsuccessful request. The error is returned in the 'error'\
+            \ field."
+          schema:
+            $ref: "#/definitions/Error"
           headers:
             WWW_Authenticate:
               type: "string"
       security:
       - basicAuth: []
-      x-swagger-router-controller: "swagger_server.controllers.timeseries_controller"
-  /v1/getFirstAfter:
-    get:
+      x-swagger-router-controller: "app.controllers.user_controller"
+    put:
       tags:
-      - "Timeseries"
-      summary: "Query first observation made after a certain point in time."
-      operationId: "get_first_after"
+      - "User"
+      summary: "Update the details of the logged in user."
+      description: "Updates the details of the specified user (specification by authentication\
+        \ credentials)."
+      operationId: "put_user"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
-      - name: "project"
-        in: "query"
-        description: "Name of the project where data will be queried from."
+      - in: "body"
+        name: "user"
+        description: "The details of the updated user:\n  - **firstName** is optional,\
+          \ the new first name of the updated user\n  - **lastName** is optional,\
+          \ the new last name of the updated user\n  - **email** is optional, the\
+          \ new email address of the updated user\n  - **password** is optional, the\
+          \ new password for the updated user\n"
         required: true
-        type: "string"
-      - name: "timestamp"
-        in: "query"
-        description: "Timestamp for the requested data. Please use one of these date\
-          \ formats: \"YYYY-MM-DD hh:mm:ss\" or \"YYYY-MM-DDThh:mm:ssZ\" incase blanks\
-          \ cannot be used."
-        required: true
-        type: "string"
-      - name: "datapointID"
-        in: "query"
-        description: "This is the unique identifier for the queried datapoint formated\
-          \ \"name=anyUniqueName\"."
-        required: true
-        type: "string"
+        schema:
+          $ref: "#/definitions/UpdateUser"
       responses:
         200:
-          description: "200 OK"
+          description: "Success"
           schema:
-            type: "array"
-            title: "results"
-            items:
-              $ref: "#/definitions/next-last"
+            $ref: "#/definitions/Success"
         401:
-          description: "Authentication information is missing or invalid"
+          description: "Unauthorized"
+          schema:
+            $ref: "#/definitions/Error"
           headers:
             WWW_Authenticate:
               type: "string"
       security:
       - basicAuth: []
-      x-swagger-router-controller: "swagger_server.controllers.timeseries_controller"
+      x-swagger-router-controller: "app.controllers.user_controller"
+    delete:
+      tags:
+      - "User"
+      summary: "CAUTION: Deletes logged in user."
+      description: "Deletes the logged in user and all his/her resources - DANGER\
+        \ to suspend important accounts!"
+      operationId: "delete_user"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Successful operation. The deleted user is returned within\
+            \ the 'resource' field and 'operation' will indicate a DELETE operation."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized access."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/resetPassword:
+    get:
+      tags:
+      - "User"
+      summary: "Resets user's password."
+      description: "Triggers a confirmation mail to the given email address that allows\
+        \ to reset user's password."
+      operationId: "get_user_reset_password"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "email"
+        in: "query"
+        description: "The user's email address."
+        required: true
+        type: "string"
+        format: "email"
+      responses:
+        200:
+          description: "Successful operation."
+          schema:
+            $ref: "#/definitions/Success"
+        404:
+          description: "User not found."
+          schema:
+            $ref: "#/definitions/Error"
+        500:
+          description: "Out of service."
+          schema:
+            $ref: "#/definitions/Error"
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/projects:
+    get:
+      tags:
+      - "User"
+      summary: "Get user's projects."
+      description: "Returns a list of all projects that the user is authorized for."
+      operationId: "get_user_projects"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Successful operation. A list of projects that the user is\
+            \ authorized to access is returned."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ProjectWithContext"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to get."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/favorites:
+    get:
+      tags:
+      - "User"
+      summary: "Get user's favorite data points."
+      description: "Returns a list of data points that the user marked as his/her\
+        \ favorites."
+      operationId: "get_user_favorites"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Successful operation. A list of all data points that the current\
+            \ user marked as favorites is returned."
+          schema:
+            type: "array"
+            title: "Favorites"
+            items:
+              $ref: "#/definitions/DataPoint"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to get."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/plotview:
+    post:
+      tags:
+      - "User"
+      summary: "Add a plotview."
+      description: "Creates a new plotview and adds it to the list of plotviews for\
+        \ this user."
+      operationId: "post_user_plotview"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "plotview"
+        description: "The details of the plotview to create.\n- **name** is mandatory,\
+          \ the name of the new plotView\n- **plotViewJson** is mandatory, a JSON\
+          \ with the detailed specification of this plotview\"\n"
+        required: true
+        schema:
+          $ref: "#/definitions/NewPlotView"
+      responses:
+        200:
+          description: "Successful operation. The user and newly created plotview\
+            \ are returned in the 'resource' field of the response and 'operation'\
+            \ is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/plotviews:
+    get:
+      tags:
+      - "User"
+      summary: "Get user's plotviews."
+      description: "Returns a list of all plotviews that the user has specified or\
+        \ shared."
+      operationId: "get_user_plotviews"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Successful operation. A list of all plotViews for the current\
+            \ user is returned."
+          schema:
+            type: "array"
+            title: "Projects"
+            items:
+              $ref: "#/definitions/PlotView"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to get."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/plotview/{id}:
+    put:
+      tags:
+      - "User"
+      summary: "Update a plotview."
+      description: "Updates a plotview for this user."
+      operationId: "put_user_plotview"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the plotview to delete"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "plotview"
+        description: "The details of the plotview update\n- **name** is optional,\
+          \ the new name of the plotview\n- **plotViewJson** is optional, the updated\
+          \ JSON specifications for the specified plotview\n"
+        required: true
+        schema:
+          $ref: "#/definitions/UpdatePlotView"
+      responses:
+        200:
+          description: "Successful operation. The updated plotView is returned in\
+            \ the 'resource' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+    delete:
+      tags:
+      - "User"
+      summary: "Delete a plotview."
+      description: "Deletes a plotview for this user."
+      operationId: "delete_user_plotview"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the plotview to delete."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The newly created plotView is returned\
+            \ in the 'resource' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/user/{id}/role/{roleid}:
+    post:
+      tags:
+      - "User"
+      summary: "Assign a role to a user."
+      description: "Assigns role with its id 'role_id' to user with her/his id 'id'."
+      operationId: "post_user_role"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The unique id of the user"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "roleid"
+        in: "path"
+        description: "The unique id of the role"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The newly created relation between 'user'\
+            \ and 'role' is returned in the 'resource' field of the response and 'operation'\
+            \ is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+    delete:
+      tags:
+      - "User"
+      summary: "Removes a role from a user."
+      description: "Removes role with id 'role_id' from user with id 'id'."
+      operationId: "delete_user_role"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The unique id of the user"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "roleid"
+        in: "path"
+        description: "The unique id of the role"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The deleted relation between 'user'\
+            \ and 'role' is returned in the 'resource' field of the response and 'operation'\
+            \ is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.user_controller"
+  /v2/project:
+    post:
+      tags:
+      - "Project"
+      summary: "Create a new project."
+      description: "Creates a new project with the specified details."
+      operationId: "post_project"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "project"
+        description: "The details of the project to create\\n\n- **name** is mandatory\n\
+          - **description** is optional (default = \\\"\\\")\n- **comapny_id** is\
+          \ mandatory and the referenced company must exist\n"
+        required: true
+        schema:
+          $ref: "#/definitions/NewProject"
+      responses:
+        200:
+          description: "Successful operation. The newly created project is returned\
+            \ in the 'resource' field and the 'operation' will indicate a CREATE operation."
+          schema:
+            $ref: "#/definitions/Project"
+        401:
+          description: "Unsuccessful request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}:
+    get:
+      tags:
+      - "Project"
+      summary: "Get project's details."
+      description: "Returns the details of the queried project."
+      operationId: "get_project"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project that should be retrieved."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. Returns the project, the company that\
+            \ owns this project, and a list of data point keys associated with this\
+            \ project."
+          schema:
+            $ref: "#/definitions/ProjectWithContext"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to get."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+    put:
+      tags:
+      - "Project"
+      summary: "Update project's details."
+      description: "Updates the details of the specified project."
+      operationId: "put_project"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project that should be updated."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "project"
+        description: "The details of the update to an existing project:\n- **name**\
+          \ is optional, a new name for the referenced project\n- **description**\
+          \ is optional, a new description for the referenced project\n"
+        required: true
+        schema:
+          $ref: "#/definitions/UpdateProject"
+      responses:
+        200:
+          description: "Successful operation. The updated project is returned within\
+            \ the 'resource' field and 'operation' will indicate a 'update' operation."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+    delete:
+      tags:
+      - "Project"
+      summary: "Delete project."
+      description: "Deletes the specified project and all its associated resources."
+      operationId: "delete_project"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project that should be deleted."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The deleted project is returned within\
+            \ the 'resource' field and 'operation' will indicate a 'delete' operation."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/roles:
+    get:
+      tags:
+      - "Project"
+      summary: "Get all roles defined in the project."
+      description: "Returns a list of roles defined for the queried project."
+      operationId: "get_project_roles"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. Returns a list of roles in the queried\
+            \ project."
+          schema:
+            $ref: "#/definitions/ListOfRoles"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/datapointkey:
+    post:
+      tags:
+      - "Project"
+      summary: "Create new data point key in project."
+      description: "Creates a new data point key in this project."
+      operationId: "post_project_datapointkey"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which a new data point key should\
+          \ be created."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "datapointkey"
+        description: "The details of the new data point key.\n- **name** is mandatory,\
+          \ the name of the new data point key\n- **description** is optional, a textual\
+          \ description for the data point key (defaults to: \\\"\\\")\n"
+        required: true
+        schema:
+          $ref: "#/definitions/NewDataPointKey"
+      responses:
+        200:
+          description: "Successful operation. The newly created data point key is\
+            \ returned in the 'resource' field and the 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/datapointkeys:
+    get:
+      tags:
+      - "Project"
+      summary: "Get list of data point keys associated with project."
+      description: "Returns a list of all data point keys that have been created in\
+        \ this project."
+      operationId: "get_project_datapointkeys"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which data point keys should be queried."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: "array"
+            title: "DataPointKeys"
+            items:
+              $ref: "#/definitions/DataPointKey"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/datapointkey/{keyid}:
+    put:
+      tags:
+      - "Project"
+      summary: "Updates a data point key."
+      description: "Updates the specified data point key associated with the project."
+      operationId: "put_project_datapointkey"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "keyid"
+        in: "path"
+        description: "The id of the data point key to update."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "datapointkey"
+        description: "The details of the updated data point key.\n- **name** is optional,\
+          \ the updated name for the data point key\n- **description** is optional,\
+          \ the updated description for the data point key\n"
+        required: true
+        schema:
+          $ref: "#/definitions/UpdateDataPointKey"
+      responses:
+        200:
+          description: "Successful operation. The updated data point key is returned\
+            \ within the 'resource' field and 'operation' will indicate a 'update'\
+            \ operation."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+    delete:
+      tags:
+      - "Project"
+      summary: "Deletes a data point key associated with the project."
+      description: "Deletes the specified data point key from the list of data point\
+        \ keys available in this project."
+      operationId: "delete_project_datapointkey"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "keyid"
+        in: "path"
+        description: "The id of the data point key to remove."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/datapoints:
+    get:
+      tags:
+      - "Project"
+      summary: "Get list of data points in this project."
+      description: "Returns a list of all data points that have been created in this\
+        \ project."
+      operationId: "get_project_datapoints"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which data points should be queried."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: "array"
+            title: "DataPoints"
+            items:
+              $ref: "#/definitions/DataPointWithContext"
+        401:
+          description: "Unsuccessful operation. Details on the error are returned\
+            \ in the 'error' field."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/tag:
+    post:
+      tags:
+      - "Project"
+      summary: "Createa new tag."
+      description: "Creates a new tag that can then be assigned to data points in\
+        \ this project."
+      operationId: "post_project_tag"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which to add a data point tag."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "tag"
+        description: "The details of the tag.\n- **key** is mandatory, the key of\
+          \ the tag\n- **value** is mandatory, the value of the key\n"
+        required: true
+        schema:
+          $ref: "#/definitions/NewTag"
+      responses:
+        200:
+          description: "Successful operation. The newly created tag is returned in\
+            \ the 'resource' field and the 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/tags:
+    get:
+      tags:
+      - "Project"
+      summary: "Get all data point tags in this project."
+      description: "Returns a list of all data point tags that have been created in\
+        \ this project."
+      operationId: "get_project_tags"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which to query data point tags."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. A list of all tags for data points in\
+            \ the specified project is returned."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Tag"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/tag/{tagid}:
+    put:
+      tags:
+      - "Project"
+      summary: "Update an existing tag."
+      description: "Updates an existing tag associated with this project."
+      operationId: "put_project_tag"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which to update a tag."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tagid"
+        in: "path"
+        description: "The id of the tag to update."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "tag"
+        description: "The details of the updated tag.\n- **key** is optional, the\
+          \ tag's key\n- **value** is optional, the tag's key value\n"
+        required: true
+        schema:
+          $ref: "#/definitions/UpdateTag"
+      responses:
+        200:
+          description: "Successful operation. The updated tag is returned in the 'resource'\
+            \ field and the 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+    delete:
+      tags:
+      - "Project"
+      summary: "Delete a tag."
+      description: "Deletes an existing tag associated with this project."
+      operationId: "delete_project_tag"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which to delete a tags."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tagid"
+        in: "path"
+        description: "The id of the tag to delete."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The deleted tag is returned in the 'resource'\
+            \ field and the 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/project/{id}/alerts/:
+    get:
+      tags:
+      - "Project"
+      summary: "Get all alerts in a project."
+      description: "Returns the details of all alerts in a project."
+      operationId: "get_project_alerts"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the project for which alerts should be queried."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. A list of all alerts for the specified\
+            \ project is returned."
+          schema:
+            $ref: "#/definitions/Alerts"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.project_controller"
+  /v2/datapoint:
+    get:
+      tags:
+      - "Datapoint"
+      summary: "Get details about data point."
+      description: "Gets the data point including meta information, i.e., whether\
+        \ it is a user's favorite, its renamings and tags."
+      operationId: "get_datapoint"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The dataPointID of the data point to retrieve."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric id of the project to which the data point identified\
+          \ by _dataPointID_ belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The data point including meta information\
+            \ is returned."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/DataPointWithContext"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/timeseries:
+    get:
+      tags:
+      - "Datapoint"
+      summary: "Get the time series data of a data point."
+      description: "Returns the measured time series data for the specified data point\n\
+        referenced by its name/dataPointID for the time interval specified by **start**\n\
+        and **end**.\nReturns the last (or respectively next) **max** observations,\
+        \ if either **start** nor **end** are provided.\n"
+      operationId: "get_datapoint_timeseries"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "project_id"
+        in: "query"
+        description: "The id of the project from which to query observations for a\
+          \ data point"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "dataPointID"
+        in: "query"
+        description: "Name/ID of the data point, e.g., *bacnet100-4120-CO2*"
+        required: true
+        type: "string"
+      - name: "start"
+        in: "query"
+        description: "Return only observations *after* this date-time\"\n\nIf **start**\
+          \ is provided without **end**, the first **max** elements *after* **start**\
+          \ are returned.\n"
+        required: false
+        type: "string"
+        format: "date-time"
+      - name: "end"
+        in: "query"
+        description: "Return only observations *before* this date-time\".\n\nIf **end**\
+          \ is provided without **start**, the last **max** elements *before* **end**\
+          \ are returned.\n"
+        required: false
+        type: "string"
+        format: "date-time"
+      - name: "max"
+        in: "query"
+        description: "Maximum number of observations to return.\n - This option is\
+          \ ignored when both **start** and **end** are provided.\n - Setting **max**\
+          \ = 0 returns *all* available data points.\n"
+        required: false
+        type: "integer"
+        default: 1
+        format: "int64"
+      - name: "samplerate"
+        in: "query"
+        description: "Desired sampling rate.\nThe returned observations are sampled\
+          \ down to the specified interval. The down sampling will be done by calculating\
+          \ the arithmetic average on all observations made within an interval. The\
+          \ timestamp will represent the beginning of the interval the resampling\
+          \ average is estimated for.\nAllowed intervals are integers combined with\
+          \ durations, like seconds (s), minutes (m), hours (h), and days (d), e.g.\n\
+          \ - \"10s\" specifies a sampling rate of \"once every 10 seconds\",\n -\
+          \ \"1h\" specifies a sampling rate of \"once every (1) hour\",\n - \"0s\"\
+          , \"0m\", \"0h\", ... specify highest sampling rate available\n"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "Successful operation. A list of observations for the specified\
+            \ data point is returned."
+          schema:
+            $ref: "#/definitions/TimeseriesWithContext"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/favorite:
+    post:
+      tags:
+      - "Datapoint"
+      summary: "Set a data point as personal favorite."
+      description: "Sets a data point referenced by its name/dataPointID as a favorite\
+        \ for the user."
+      operationId: "post_datapoint_favorite"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The dataPointID to to mark as favorite"
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric id of the project to which the data point identified\
+          \ by _dataPointID_ belongs"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The newly created favorite is returned\
+            \ in the 'resource' field and the 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unsuccessful operation. Details on the error are returned\
+            \ in the 'error' field."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+    delete:
+      tags:
+      - "Datapoint"
+      summary: "Remove a personal favorite data point."
+      description: "Removes a data point from the personal favorites of the user."
+      operationId: "delete_datapoint_favorite"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The dataPointID of the data point to unset as favorite"
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric id of the project to which the data point identified\
+          \ by _dataPointID_ belongs"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The deleted favorite data point is returned\
+            \ in the 'resource' field and the 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/renaming:
+    post:
+      tags:
+      - "Datapoint"
+      summary: "Add an alternative name associated with a specific data point key\
+        \ for a data point."
+      description: "Assigns an alternative name to a data point referenced by its\
+        \ name/dataPointID under the specified data point key id."
+      operationId: "post_datapoint_renaming"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "renaming"
+        description: "The details of the datapoint renaming.\n- **renaming** is mandatory,\
+          \ the renaming for the datapoint referenced by the following parameters\n\
+          - **dataPointID** is mandatory, the name/ID of the datapoint to rename\n\
+          - **project_id** is mandatory, the numeric id of the project in which the\
+          \ datapoint referenced by _dataPointID_ must exist\n- **datapointkey_id**\
+          \ is mandatory, the numeric id of the datapointkey with which to associate\
+          \ the renaming\"\n"
+        required: true
+        schema:
+          $ref: "#/definitions/NewRenaming"
+      responses:
+        200:
+          description: "Successful operation. The newly created renaming is returned\
+            \ in the 'resource' field and the 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/renaming/{id}:
+    put:
+      tags:
+      - "Datapoint"
+      summary: "Change a renaming."
+      description: "Changes the alternative name of a data point under a data point\
+        \ key."
+      operationId: "put_datapoint_renaming"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the data point renaming that should be updated."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "renaming"
+        description: "The details of the data point renaming.\n- **renaming** is optional,\
+          \ the updated renaming for the data point referenced by the following parameters\n"
+        required: true
+        schema:
+          $ref: "#/definitions/UpdateRenaming"
+      responses:
+        200:
+          description: "Successful operation. The newly created renaming is returned\
+            \ in the 'resource' field and the 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+    delete:
+      tags:
+      - "Datapoint"
+      summary: "Delete an alternative name for a given data point under a given data\
+        \ point key."
+      description: "Deletes the alternative name for the data point referenced by\
+        \ its name/dataPointID under the specified dataPointKey."
+      operationId: "delete_datapoint_renaming"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the renaming to delete."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The newly created renaming is returned\
+            \ in the 'resource' field and the 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/tag:
+    post:
+      tags:
+      - "Datapoint"
+      summary: "Add a tag."
+      description: "Adds a tag to the specified data point."
+      operationId: "post_datapoint_tag"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The dataPointID of the data point to assign a tag to."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric id of the project to which the data point identified\
+          \ by 'dataPointID' belongs to."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag_id"
+        in: "query"
+        description: "The numeric id of the tag which will be assigned to the data\
+          \ point referenced to by 'dataPointID' and 'project_id'."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. The newly created relation (data point,\
+            \ tag) is returned in the 'resource' field and the 'operation' is set\
+            \ to 'create'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'create'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/tag/{id}:
+    delete:
+      tags:
+      - "Datapoint"
+      summary: "Remove tag from data point."
+      description: "Removes the tag identified by 'id' from the data point identified\
+        \ by 'dataPointID' and 'project_id'."
+      operationId: "delete_datapoint_tag"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The unique id of the tag to delete."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "dataPointID"
+        in: "query"
+        description: "The dataPointID of the data point from which the tag will be\
+          \ deleted."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric id of the project to which the data point identified\
+          \ by 'dataPointID' belongs to."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation.\nThe deleted relation (data point, tag)\
+            \ is returned in the 'resource' field and the 'operation' is set to 'delete'.\n"
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unsuccessful request.\nDetails on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'.\"\
+            \n"
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/alert:
+    post:
+      tags:
+      - "Datapoint"
+      summary: "Create a new alert."
+      description: "Creates a new alert with the specified details. The following\
+        \ parameters can/must be provided:\n  - **alert_type** is mandatory. Choose\
+        \ from 'throughput' and 'threshold'. While 'throughput' will alarm on a lower\
+        \ limit of observations stored per time interval, 'threshold' will alarm on\
+        \ the measured values breaking the threshold limits. The alarm needs to be\
+        \ configured within the alert json string. Using the aedifion API/ui/ this\
+        \ means the json string needs to be reduced to the alert inputs needed (The\
+        \ lines \"JSON Example for [...]\" need to be erased. Please check consistency\
+        \ of brackets so that the outgoing json will be well defined.):\n  \n  \n\
+        \  - **name** is mandatory, the name of the alert. The name needs to be unique.\
+        \ In case it is not, the error message will inform about it.\n  - **telegram_chatid**\
+        \ is optional, chat ID where you would like to recieve your alerts\n  - **email**\
+        \ is optional, email where you would like to recieve your alerts\n  \n  \n\
+        \  - Mandatory for 'alert_type' = 'throughput':\n    - **threshold_crit**,\
+        \ the threshold above which the alert is fired\n    - **threshold_ok**, the\
+        \ threshold below which the alert is reset\n    - **period**, time period\
+        \ over which to measure the throughput (examples: \"1h\", \"30s\", \"10m\"\
+        )\n\n  - Mandatory for 'alert_type' = 'threshold':\n    - **threshold_dead**,\
+        \ the threshold below which sensor is considered DEAD\n    - **threshold_info**,\
+        \ the threshold above which alert level is INFO (below resets to OK)\n   \
+        \ - **threshold_warn**, the threshold above which alert level is WARNING\n\
+        \    - **threshold_crit**, the threshold above which alert level is CRITICAL\n\
+        \    - **threshold_order**, order of the thresholds. 'asc' as described above,\
+        \ or 'desc' to reverse order of DEAD, OK, INFO, WARNING, and CRITICAL levels\
+        \ (basically, flips all comparisons from < to >= and <= to >)\n    - **period**,\
+        \ the time period after which an alert is resent (examples: \"1h\", \"30s\"\
+        , \"10m\")\n"
+      operationId: "post_alert"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The alphanumeric dataPointID of the datapoint upon which to\
+          \ set an alert."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric project id to which the specified data point belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "alert_type"
+        in: "query"
+        description: "The type of the alert to create."
+        required: true
+        type: "string"
+        enum:
+        - "throughput"
+        - "threshold"
+      - in: "body"
+        name: "alert"
+        description: "The details of the alert to create as documented in the description\
+          \ above."
+        required: true
+        schema:
+          $ref: "#/definitions/NewAlert"
+      responses:
+        200:
+          description: "Successful operation. The newly created alert is returned\
+            \ in the 'resource' field and 'operation' will indicate a 'create' operation."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unsuccessful request. The error is returned in the 'error'\
+            \ field and 'operation' will indicate a 'create' operation."
+          schema:
+            $ref: "#/definitions/Error"
+        415:
+          description: "Unsuccessful request. The error is returned in the 'error'\
+            \ field and 'operation' will indicate a 'create' operation."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/alert/:
+    get:
+      tags:
+      - "Datapoint"
+      summary: "Get alert details."
+      description: "Returns the details of the alert by name."
+      operationId: "get_alert"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The alphanumeric dataPointID for which to get an alarm."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric project id to which the specified data point belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "name"
+        in: "query"
+        description: "The name of the alert to retrieve."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successful operation. A list of parameters for the specified\
+            \ alert is returned."
+          schema:
+            $ref: "#/definitions/Alert"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+    put:
+      tags:
+      - "Datapoint"
+      summary: "Edit an Alert."
+      description: "Modify alert settings."
+      operationId: "put_alert"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The alphanumeric dataPointID for which to delete an alarm."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric project id to which the specified data point belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "name"
+        in: "query"
+        description: "The name of the alert to modify."
+        required: true
+        type: "string"
+      - name: "param"
+        in: "query"
+        description: "The name of the parameter to change. The available parameters\
+          \ can be viewed at the POST /v2/datapoint/alert endpoint, input example\
+          \ json."
+        required: true
+        type: "string"
+      - name: "value"
+        in: "query"
+        description: "The new value for the specified parameter. Example acceptable\
+          \ values for period are 1s, 5m, 6h, 1w"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successful operation. The edited alert is returned in the\
+            \ 'resource' field and the 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+    delete:
+      tags:
+      - "Datapoint"
+      summary: "Delete an alert."
+      description: "Delete an alert by name."
+      operationId: "delete_alert"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The alphanumeric dataPointID for which to delete an alarm."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric project id to which the specified data point belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "name"
+        in: "query"
+        description: "The name of the alert to delete."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successful operation. The details of the deleted alarm are\
+            \ returned in the 'resource' field and 'operation' will indicate a 'delete'\
+            \ operation.\n"
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unsuccessful request.\nDetails on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'delete'.\"\
+            \n"
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/allalerts/:
+    get:
+      tags:
+      - "Datapoint"
+      summary: "Get all alerts on a datapoint."
+      description: "Returns the details of all alerts on a datapoint."
+      operationId: "get_allalerts"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The alphanumeric dataPointID for which to delete an alarm."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric project id to which the specified data point belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "Successful operation. A list of all alerts for the specified\
+            \ datapoint is returned."
+          schema:
+            $ref: "#/definitions/Alerts"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'get'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
+  /v2/datapoint/alert_toggle/:
+    put:
+      tags:
+      - "Datapoint"
+      summary: "Enable or disable an alert."
+      description: "Enable or disable an alert."
+      operationId: "toggle_alert"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "dataPointID"
+        in: "query"
+        description: "The alphanumeric dataPointID for which to delete an alarm."
+        required: true
+        type: "string"
+      - name: "project_id"
+        in: "query"
+        description: "The numeric project id to which the specified data point belongs."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "name"
+        in: "query"
+        description: "The name of the alert to toggle."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successful operation. The edited alert is returned in the\
+            \ 'resource' field and the 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Success"
+        401:
+          description: "Unauthorized request. Details on the error are returned in\
+            \ the 'error' field of the response and 'operation' is set to 'update'."
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            WWW_Authenticate:
+              type: "string"
+      security:
+      - basicAuth: []
+      x-swagger-router-controller: "app.controllers.datapoint_controller"
 securityDefinitions:
   basicAuth:
     type: "basic"
 definitions:
-  byTag:
+  AuthToken:
+    type: "object"
+    required:
+    - "token"
     properties:
-      tagstring:
+      token:
         type: "string"
-      schema:
-        type: "array"
-        title: "timevalue"
-        items:
-          $ref: "#/definitions/ResultsTimestamp"
-  ResultsTimestamp:
+      valid_until:
+        type: "string"
+        format: "date-time"
+      scope:
+        type: "string"
+        default: "full"
+        enum:
+        - "read"
+        - "write"
+        - "full"
+    example:
+      valid_until: "2000-01-23T04:56:07.000+00:00"
+      scope: "full"
+      token: "token"
+  Company:
+    type: "object"
+    required:
+    - "name"
     properties:
-      time:
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+      description:
+        type: "string"
+    example:
+      name: "name"
+      description: "description"
+      id: 1
+  User:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      firstName:
+        type: "string"
+      lastName:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+      company_id:
+        type: "integer"
+    example:
+      firstName: "firstName"
+      lastName: "lastName"
+      company_id: 6
+      id: 0
+      email: "email"
+  NewUser:
+    type: "object"
+    required:
+    - "company_id"
+    - "email"
+    - "firstName"
+    - "lastName"
+    properties:
+      firstName:
+        type: "string"
+      lastName:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+      password:
+        type: "string"
+      company_id:
+        type: "integer"
+    example:
+      firstName: "firstName"
+      lastName: "lastName"
+      password: "password"
+      company_id: 0
+      email: "email"
+  UpdateUser:
+    type: "object"
+    properties:
+      firstName:
+        type: "string"
+      lastName:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+      password:
+        type: "string"
+    example:
+      firstName: "firstName"
+      lastName: "lastName"
+      password: "password"
+      email: "email"
+  Project:
+    type: "object"
+    required:
+    - "company_id"
+    - "name"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      description:
+        type: "string"
+      company_id:
+        type: "integer"
+        format: "int64"
+    example:
+      company_id: 6
+      name: "name"
+      description: "description"
+      id: 0
+  NewProject:
+    type: "object"
+    required:
+    - "company_id"
+    - "name"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+      company_id:
+        type: "integer"
+        format: "int64"
+    example:
+      company_id: 0
+      name: "name"
+      description: "description"
+  UpdateProject:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+    example:
+      name: "name"
+      description: "description"
+  ProjectWithContext:
+    type: "object"
+    properties:
+      project:
+        $ref: "#/definitions/Project"
+      company:
+        $ref: "#/definitions/Company"
+      dataPointKeys:
+        type: "array"
+        items:
+          $ref: "#/definitions/DataPointKey"
+    example:
+      project:
+        company_id: 6
+        name: "name"
+        description: "description"
+        id: 0
+      company:
+        name: "name"
+        description: "description"
+        id: 1
+      dataPointKeys:
+      - project_id: 5
+        name: "name"
+        description: "description"
+        id: 1
+      - project_id: 5
+        name: "name"
+        description: "description"
+        id: 1
+  DataPointKey:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      description:
+        type: "string"
+      project_id:
+        type: "integer"
+    example:
+      project_id: 5
+      name: "name"
+      description: "description"
+      id: 1
+  NewDataPointKey:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+    example:
+      name: "name"
+      description: "description"
+  UpdateDataPointKey:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+    example:
+      name: "name"
+      description: "description"
+  DataPoint:
+    type: "object"
+    required:
+    - "dataPointID"
+    - "project_id"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      dataPointID:
+        type: "string"
+      project_id:
+        type: "integer"
+        format: "int64"
+    example:
+      dataPointID: "dataPointID"
+      project_id: 6
+      id: 0
+  DataPointWithContext:
+    type: "object"
+    properties:
+      dataPointID:
+        type: "string"
+      favorite:
+        type: "boolean"
+      renamings:
+        type: "array"
+        items:
+          $ref: "#/definitions/Renaming"
+      tags:
+        type: "array"
+        items:
+          $ref: "#/definitions/Tag"
+    example:
+      dataPointID: "dataPointID"
+      favorite: true
+      renamings:
+      - renaming: "renaming"
+        datapointkey_id: 1
+        id: 0
+        datapoint_id: 6
+      - renaming: "renaming"
+        datapointkey_id: 1
+        id: 0
+        datapoint_id: 6
+      tags:
+      - id: 5
+        value: "value"
+        key: "key"
+      - id: 5
+        value: "value"
+        key: "key"
+  Renaming:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      renaming:
+        type: "string"
+      datapoint_id:
+        type: "integer"
+        format: "int64"
+      datapointkey_id:
+        type: "integer"
+        format: "int64"
+    example:
+      renaming: "renaming"
+      datapointkey_id: 1
+      id: 0
+      datapoint_id: 6
+  NewRenaming:
+    type: "object"
+    properties:
+      renaming:
+        type: "string"
+      datapointkey_id:
+        type: "integer"
+        format: "int64"
+      dataPointID:
+        type: "string"
+      project_id:
+        type: "integer"
+        format: "int64"
+    example:
+      renaming: "renaming"
+      dataPointID: "dataPointID"
+      project_id: 6
+      datapointkey_id: 0
+  UpdateRenaming:
+    type: "object"
+    properties:
+      renaming:
+        type: "string"
+    example:
+      renaming: "renaming"
+  PlotView:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      plotViewJson:
+        type: "string"
+    example:
+      plotViewJson: "plotViewJson"
+      name: "name"
+      id: 5
+  NewPlotView:
+    type: "object"
+    required:
+    - "name"
+    - "plotViewJson"
+    properties:
+      name:
+        type: "string"
+      plotViewJson:
+        type: "string"
+    example:
+      plotViewJson: "plotViewJson"
+      name: "name"
+  UpdatePlotView:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      plotViewJson:
+        type: "string"
+    example:
+      plotViewJson: "plotViewJson"
+      name: "name"
+  AuthTag:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      key:
         type: "string"
       value:
-        type: "number"
-        format: "float"
-  byBuilding:
-    properties:
-      building:
         type: "string"
-  tags:
+      read:
+        type: "boolean"
+      write:
+        type: "boolean"
+  Role:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+      description:
+        type: "string"
+      project_id:
+        type: "integer"
+        format: "int64"
+      authed_tags:
+        type: "array"
+        items:
+          $ref: "#/definitions/AuthTag"
+  NewRole:
+    type: "object"
+    required:
+    - "authed_tags"
+    - "name"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+      authed_tags:
+        type: "array"
+        items:
+          $ref: "#/definitions/AuthTag"
+  UpdateRole:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+      authed_tags:
+        type: "array"
+        items:
+          $ref: "#/definitions/AuthTag"
+  ListOfRoles:
+    type: "array"
+    items:
+      $ref: "#/definitions/Role"
+  Tag:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      key:
+        type: "string"
+      value:
+        type: "string"
+    example:
+      id: 5
+      value: "value"
+      key: "key"
+  NewTag:
+    type: "object"
+    required:
+    - "key"
+    - "value"
     properties:
       key:
         type: "string"
       value:
         type: "string"
-  next-last:
+    example:
+      value: "value"
+      key: "key"
+  UpdateTag:
+    type: "object"
+    properties:
+      key:
+        type: "string"
+      value:
+        type: "string"
+    example:
+      value: "value"
+      key: "key"
+  Error:
+    type: "object"
+    required:
+    - "error"
+    properties:
+      success:
+        type: "boolean"
+        default: false
+      operation:
+        type: "string"
+        enum:
+        - ""
+        - "get"
+        - "create"
+        - "delete"
+        - "update"
+      error:
+        type: "string"
+  Success:
+    type: "object"
+    properties:
+      success:
+        type: "boolean"
+        default: true
+      operation:
+        type: "string"
+        enum:
+        - ""
+        - "get"
+        - "create"
+        - "delete"
+        - "update"
+      resource:
+        type: "object"
+        properties: {}
+    example:
+      resource: "{}"
+      success: true
+      operation: ""
+  UserWithContext:
+    properties:
+      user:
+        $ref: "#/definitions/User"
+      company:
+        $ref: "#/definitions/Company"
+      plotviews:
+        type: "array"
+        items:
+          $ref: "#/definitions/PlotView"
+    example:
+      plotviews:
+      - plotViewJson: "plotViewJson"
+        name: "name"
+        id: 5
+      - plotViewJson: "plotViewJson"
+        name: "name"
+        id: 5
+      company:
+        name: "name"
+        description: "description"
+        id: 1
+      user:
+        firstName: "firstName"
+        lastName: "lastName"
+        company_id: 6
+        id: 0
+        email: "email"
+  Timeseries:
+    type: "array"
+    items:
+      $ref: "#/definitions/Observation"
+  TimeseriesWithContext:
+    properties:
+      dataPointID:
+        type: "string"
+      data:
+        $ref: "#/definitions/Timeseries"
+      tags:
+        type: "array"
+        items:
+          $ref: "#/definitions/Tag"
+    example:
+      dataPointID: "dataPointID"
+      data: ""
+      tags:
+      - id: 5
+        value: "value"
+        key: "key"
+      - id: 5
+        value: "value"
+        key: "key"
+  Observation:
     properties:
       time:
         type: "string"
       value:
         type: "number"
         format: "float"
+  Alert:
+    type: "object"
+    required:
+    - "name"
+    - "period"
+    properties:
+      name:
+        type: "string"
+      project_id:
+        type: "integer"
+      dataPointID:
+        type: "string"
+      created:
+        type: "string"
+      status:
+        type: "string"
+        enum:
+        - "enabled"
+        - "disabled"
+      period:
+        type: "number"
+      threshold_crit:
+        type: "number"
+      threshold_warn:
+        type: "number"
+      threshold_info:
+        type: "number"
+      threshold_ok:
+        type: "number"
+      threshold_dead:
+        type: "number"
+      threshold_order:
+        type: "string"
+        enum:
+        - "asc"
+        - "desc"
+      telegram_chatid:
+        type: "string"
+      email:
+        type: "string"
+        pattern: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+    example:
+      period: 6.02745618307040320615897144307382404804229736328125
+      threshold_crit: 1.46581298050294517310021547018550336360931396484375
+      threshold_ok: 2.3021358869347654518833223846741020679473876953125
+      created: "created"
+      telegram_chatid: "telegram_chatid"
+      threshold_info: 5.63737665663332876420099637471139430999755859375
+      threshold_warn: 5.962133916683182377482808078639209270477294921875
+      dataPointID: "dataPointID"
+      threshold_dead: 7.061401241503109105224211816675961017608642578125
+      project_id: 0
+      threshold_order: "asc"
+      name: "name"
+      email: "email"
+      status: "enabled"
+  Alerts:
+    properties:
+      alert:
+        type: "array"
+        items:
+          $ref: "#/definitions/Alert"
+    example:
+      alert:
+      - period: 6.02745618307040320615897144307382404804229736328125
+        threshold_crit: 1.46581298050294517310021547018550336360931396484375
+        threshold_ok: 2.3021358869347654518833223846741020679473876953125
+        created: "created"
+        telegram_chatid: "telegram_chatid"
+        threshold_info: 5.63737665663332876420099637471139430999755859375
+        threshold_warn: 5.962133916683182377482808078639209270477294921875
+        dataPointID: "dataPointID"
+        threshold_dead: 7.061401241503109105224211816675961017608642578125
+        project_id: 0
+        threshold_order: "asc"
+        name: "name"
+        email: "email"
+        status: "enabled"
+      - period: 6.02745618307040320615897144307382404804229736328125
+        threshold_crit: 1.46581298050294517310021547018550336360931396484375
+        threshold_ok: 2.3021358869347654518833223846741020679473876953125
+        created: "created"
+        telegram_chatid: "telegram_chatid"
+        threshold_info: 5.63737665663332876420099637471139430999755859375
+        threshold_warn: 5.962133916683182377482808078639209270477294921875
+        dataPointID: "dataPointID"
+        threshold_dead: 7.061401241503109105224211816675961017608642578125
+        project_id: 0
+        threshold_order: "asc"
+        name: "name"
+        email: "email"
+        status: "enabled"
+  NewAlert:
+    required:
+    - "name"
+    - "period"
+    properties:
+      name:
+        type: "string"
+      threshold_crit:
+        type: "number"
+      threshold_ok:
+        type: "number"
+      threshold_dead:
+        type: "number"
+      threshold_order:
+        type: "string"
+        enum:
+        - "asc"
+        - "desc"
+      threshold_warn:
+        type: "number"
+      threshold_info:
+        type: "number"
+      period:
+        type: "string"
+        pattern: "^\\d+[hms]{1}$"
+      telegram_chatid:
+        type: "string"
+      email:
+        type: "string"
+        pattern: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+    example:
+      JSON Example for threshold alert:
+        name: "Example_Threshold_Alert"
+        threshold_crit: 1400
+        threshold_ok: 900
+        threshold_dead: 100
+        threshold_order: "asc"
+        period: "2h"
+        telegram_chatid: "string"
+        email: "no-reply@aedifion.com"
+      JSON Example for throughput alert:
+        name: "Example_Throughput_Alert"
+        threshold_info: 50
+        threshold_warn: 20
+        threshold_crit: 10
+        period: "10m"
+        telegram_chatid: "string"
+        email: "no-reply@aedifion.com"
