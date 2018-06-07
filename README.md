@@ -18,7 +18,7 @@ This tutorial demonstrates how you can use the aedifion http API within your pro
 among many other ways to interact with the aedifion API.
 
 ## Use the aedifion Excel plug-in
-The aedifion Excel plug-in can be downloaded at TODO. Please follow the instructions provided in the download repository to install the plug-in to your Microsoft Excel. The aedifion plug-in will add a new ribbon to your Excel. Just click the ribbon and you can import timeseries data to your Excel sheets and own Excel tools right away.
+The aedifion Excel plug-in can be downloaded at https://github.com/aedifion/aedifion-excel-plugin. Please follow the instructions provided in the download repository to install the plug-in to your Microsoft Excel. The aedifion plug-in will add a new ribbon to your Excel. Just click the ribbon and you can import timeseries data to your Excel sheets and own Excel tools right away.
 
 ## Use the graphical aedifion API user interface
 The graphical user interface is designed to give a fast introduction to the aedifion API and give you a fast access to your data.
